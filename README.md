@@ -5,7 +5,7 @@ A comprehensive, enterprise-grade stock trading web application built with ASP.N
 ## 🎯 Architecture Overview
 
 ### System Architecture
-![System Architecture](design/architecture-diagram-1.png)
+![System Architecture](design/architecture-diagram-large-1.png)
 
 The platform follows a microservices architecture with:
 - **Frontend Layer**: React SPA with real-time WebSocket connections
@@ -15,7 +15,7 @@ The platform follows a microservices architecture with:
 - **External Integration**: Market data providers and AI/ML services
 
 ### Data Flow
-![Data Flow Diagram](design/architecture-diagram-2.png)
+![Data Flow Diagram](design/architecture-diagram-large-2.png)
 
 Key data flows include:
 1. **Authentication**: JWT-based login with token refresh
@@ -24,7 +24,7 @@ Key data flows include:
 4. **AI Insights**: ML-powered predictions and analysis
 
 ### Component Interaction
-![Component Interaction](design/architecture-diagram-3.png)
+![Component Interaction](design/architecture-diagram-large-3.png)
 
 Components are organized in layers:
 - **Presentation**: React components and pages
@@ -33,7 +33,7 @@ Components are organized in layers:
 - **Data Access**: Repository pattern with EF Core
 
 ### Technology Stack
-![Technology Stack](design/architecture-diagram-4.png)
+![Technology Stack](design/architecture-diagram-large-4.png)
 
 Modern technology choices:
 - **Frontend**: React 18 + TypeScript + Material-UI
