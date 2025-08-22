@@ -1,0 +1,254 @@
+# Azure DevOps Pipeline for Stock Trading Application
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+
+variables:
+  buildConfiguration: 'Release'
+  dotNetFramework: 'net8.0'
+  dotNetVersion: '8.0.x'
+  nodeVersion: '18.x'
+  pythonVersion: '3.11'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildBackend
+    displayName: 'Build .NET Microservices'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET SDK'
+      inputs:
+        version: $(dotNetVersion)
+        includePreviewVersions: false
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore packages'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run tests'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish UserManagement API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/UserManagement.API/UserManagement.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/UserManagement'
+        zipAfterPublish: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish MarketData API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/MarketData.API/MarketData.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MarketData'
+        zipAfterPublish: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish TradingEngine API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/TradingEngine.API/TradingEngine.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/TradingEngine'
+        zipAfterPublish: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Portfolio API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/Portfolio.API/Portfolio.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/Portfolio'
+        zipAfterPublish: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish API Gateway'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/ApiGateway/ApiGateway.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/ApiGateway'
+        zipAfterPublish: true
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Backend Artifacts'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'backend-drop'
+
+  - job: BuildFrontend
+    displayName: 'Build React Frontend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: NodeTool@0
+      displayName: 'Use Node.js'
+      inputs:
+        versionSpec: $(nodeVersion)
+    
+    - script: |
+        cd frontend
+        npm ci
+      displayName: 'Install dependencies'
+    
+    - script: |
+        cd frontend
+        npm run build
+      displayName: 'Build React app'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Frontend Artifacts'
+      inputs:
+        pathToPublish: 'frontend/build'
+        artifactName: 'frontend-drop'
+
+  - job: BuildAIServices
+    displayName: 'Build Python AI Services'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: UsePythonVersion@0
+      displayName: 'Use Python'
+      inputs:
+        versionSpec: $(pythonVersion)
+    
+    - script: |
+        cd src/AI.Services
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      displayName: 'Install Python dependencies'
+    
+    - script: |
+        cd src/AI.Services
+        python -m pytest tests/ --junitxml=test-results.xml --cov=. --cov-report=xml
+      displayName: 'Run Python tests'
+      continueOnError: true
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish Python test results'
+      inputs:
+        testResultsFiles: 'src/AI.Services/test-results.xml'
+        testRunTitle: 'Python AI Services Tests'
+      condition: succeededOrFailed()
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive AI Services'
+      inputs:
+        rootFolderOrFile: 'src/AI.Services'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/ai-services.zip'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish AI Services Artifacts'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'ai-services-drop'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  
+  jobs:
+  - deployment: DeployToAzure
+    displayName: 'Deploy to Azure'
+    environment: 'production'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: backend-drop
+          
+          - download: current
+            artifact: frontend-drop
+          
+          - download: current
+            artifact: ai-services-drop
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy UserManagement API'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webApp'
+              appName: '$(userManagementAppName)'
+              package: '$(Pipeline.Workspace)/backend-drop/UserManagement/*.zip'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy MarketData API'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webApp'
+              appName: '$(marketDataAppName)'
+              package: '$(Pipeline.Workspace)/backend-drop/MarketData/*.zip'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy TradingEngine API'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webApp'
+              appName: '$(tradingEngineAppName)'
+              package: '$(Pipeline.Workspace)/backend-drop/TradingEngine/*.zip'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy Portfolio API'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webApp'
+              appName: '$(portfolioAppName)'
+              package: '$(Pipeline.Workspace)/backend-drop/Portfolio/*.zip'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy API Gateway'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webApp'
+              appName: '$(apiGatewayAppName)'
+              package: '$(Pipeline.Workspace)/backend-drop/ApiGateway/*.zip'
+          
+          - task: AzureStaticWebApp@0
+            displayName: 'Deploy React Frontend'
+            inputs:
+              app_location: '$(Pipeline.Workspace)/frontend-drop'
+              api_location: ''
+              output_location: ''
+              azure_static_web_apps_api_token: '$(staticWebAppToken)'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy AI Services'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appType: 'webAppLinux'
+              appName: '$(aiServicesAppName)'
+              package: '$(Pipeline.Workspace)/ai-services-drop/ai-services.zip'
+              runtimeStack: 'PYTHON|3.11'
