@@ -3,76 +3,86 @@
 ## System Architecture Diagram
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#ff0000', 'fontSize': '18px', 'fontFamily': 'Arial'}}}%%
 graph TB
     %% Frontend Layer
-    subgraph "Frontend Layer"
-        UI[React Frontend<br/>TypeScript + Material-UI]
-        WS[WebSocket Client<br/>Real-time Updates]
+    subgraph FL ["🖥️ Frontend Layer"]
+        direction TB
+        UI["📱 React Frontend<br/>TypeScript + Material-UI<br/>Port: 3000"]
+        WS["🔄 WebSocket Client<br/>Real-time Updates<br/>Socket.IO"]
     end
 
     %% API Gateway
-    subgraph "API Gateway Layer"
-        GW[API Gateway<br/>Ocelot + JWT Auth]
+    subgraph GWL ["🚪 API Gateway Layer"]
+        direction TB
+        GW["🛡️ API Gateway<br/>Ocelot + JWT Auth<br/>Port: 5000<br/>Request Routing"]
     end
 
     %% Microservices Layer
-    subgraph "Microservices Layer"
-        UM[User Management<br/>ASP.NET Core 8.0]
-        MD[Market Data<br/>ASP.NET Core 8.0]
-        TE[Trading Engine<br/>ASP.NET Core 8.0]
-        PM[Portfolio Management<br/>ASP.NET Core 8.0]
-        AI[AI Services<br/>Python FastAPI]
+    subgraph MSL ["⚙️ Microservices Layer"]
+        direction TB
+        UM["👤 User Management<br/>ASP.NET Core 8.0<br/>Port: 5001<br/>Authentication & Profiles"]
+        MD["📊 Market Data<br/>ASP.NET Core 8.0<br/>Port: 5002<br/>Real-time Quotes"]
+        TE["💰 Trading Engine<br/>ASP.NET Core 8.0<br/>Port: 5003<br/>Order Processing"]
+        PM["📈 Portfolio Management<br/>ASP.NET Core 8.0<br/>Port: 5004<br/>Analytics & Tracking"]
+        AI["🤖 AI Services<br/>Python FastAPI<br/>Port: 8000<br/>ML Predictions"]
     end
 
     %% Data Layer
-    subgraph "Data Layer"
-        DB1[(User Database<br/>SQL Server)]
-        DB2[(Market Database<br/>SQL Server)]
-        DB3[(Trading Database<br/>SQL Server)]
-        DB4[(Portfolio Database<br/>SQL Server)]
-        REDIS[(Redis Cache<br/>Session & Data)]
+    subgraph DL ["💾 Data Layer"]
+        direction TB
+        DB1[("👥 User Database<br/>SQL Server<br/>Users & Auth")]
+        DB2[("📈 Market Database<br/>SQL Server<br/>Quotes & History")]
+        DB3[("💸 Trading Database<br/>SQL Server<br/>Orders & Trades")]
+        DB4[("📊 Portfolio Database<br/>SQL Server<br/>Holdings & Analytics")]
+        REDIS[("⚡ Redis Cache<br/>Session & Market Data<br/>High Performance")]
     end
 
     %% External Services
-    subgraph "External Services"
-        EXT1[Market Data APIs<br/>Alpha Vantage, Finnhub]
-        EXT2[News APIs<br/>NewsAPI]
-        EXT3[AI/ML Services<br/>OpenAI, Transformers]
+    subgraph EXT ["🌐 External Services"]
+        direction TB
+        EXT1["📡 Market Data APIs<br/>Alpha Vantage<br/>Finnhub<br/>Real-time Feeds"]
+        EXT2["📰 News APIs<br/>NewsAPI<br/>Market Sentiment<br/>Breaking News"]
+        EXT3["🧠 AI/ML Services<br/>OpenAI GPT<br/>Transformers<br/>Advanced Analytics"]
     end
 
-    %% Connections
-    UI --> GW
-    WS --> GW
-    GW --> UM
-    GW --> MD
-    GW --> TE
-    GW --> PM
-    GW --> AI
+    %% Connections with labels
+    UI -.->|"HTTPS Requests"| GW
+    WS -.->|"WebSocket"| GW
+    
+    GW -->|"Route & Auth"| UM
+    GW -->|"Route & Auth"| MD
+    GW -->|"Route & Auth"| TE
+    GW -->|"Route & Auth"| PM
+    GW -->|"Route & Auth"| AI
 
-    UM --> DB1
-    MD --> DB2
-    TE --> DB3
-    PM --> DB4
+    UM -->|"EF Core"| DB1
+    MD -->|"EF Core"| DB2
+    TE -->|"EF Core"| DB3
+    PM -->|"EF Core"| DB4
 
-    MD --> REDIS
-    AI --> REDIS
+    MD -.->|"Cache"| REDIS
+    AI -.->|"Cache"| REDIS
+    UM -.->|"Sessions"| REDIS
 
-    MD --> EXT1
-    AI --> EXT2
-    AI --> EXT3
+    MD -->|"API Calls"| EXT1
+    AI -->|"API Calls"| EXT2
+    AI -->|"API Calls"| EXT3
 
-    %% Styling
-    classDef frontend fill:#e1f5fe
-    classDef gateway fill:#f3e5f5
-    classDef microservice fill:#e8f5e8
-    classDef data fill:#fff3e0
-    classDef external fill:#ffebee
+    %% Enhanced Styling
+    classDef frontend fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000
+    classDef gateway fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#000
+    classDef microservice fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#000
+    classDef data fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
+    classDef external fill:#ffebee,stroke:#d32f2f,stroke-width:3px,color:#000
+    classDef layer fill:#f5f5f5,stroke:#424242,stroke-width:2px,color:#000
 
     class UI,WS frontend
     class GW gateway
     class UM,MD,TE,PM,AI microservice
     class DB1,DB2,DB3,DB4,REDIS data
     class EXT1,EXT2,EXT3 external
+    class FL,GWL,MSL,DL,EXT layer
 ```
 
 ## Data Flow Diagram
