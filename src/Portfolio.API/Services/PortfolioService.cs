@@ -449,7 +449,7 @@ public class PortfolioService : IPortfolioService
                 
                 foreach (var holding in overweightHoldings)
                 {
-                    var currentWeight = h.MarketValue / totalValue;
+                    var currentWeight = holding.MarketValue / totalValue;
                     var targetWeight = 0.15m; // Target 15%
                     var excessValue = (currentWeight - targetWeight) * totalValue;
                     

@@ -46,7 +46,7 @@ public class MockExternalDataProvider : IExternalDataProvider
             Price = currentPrice,
             Bid = Math.Round(currentPrice * 0.999m, 2),
             Ask = Math.Round(currentPrice * 1.001m, 2),
-            Open = Math.Round(previousClose * (1 + (decimal)(_random.NextDouble() * 0.01 - 0.005m)), 2),
+            Open = Math.Round(previousClose * (1 + (decimal)(_random.NextDouble() * 0.01) - 0.005m), 2),
             High = Math.Round(currentPrice * (1 + (decimal)(_random.NextDouble() * 0.02)), 2),
             Low = Math.Round(currentPrice * (1 - (decimal)(_random.NextDouble() * 0.02)), 2),
             PreviousClose = previousClose,

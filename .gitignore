@@ -11,6 +11,53 @@
 *.sln.docstates
 *.env
 
+# SQLite Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Application logs
+logs/
+*.log
+*.pid
+
+# Frontend build and dependencies
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Python AI Services
+src/AI.Services/venv/
+src/AI.Services/__pycache__/
+src/AI.Services/*.pyc
+src/AI.Services/.env
+src/AI.Services/models/trained/
+src/AI.Services/data/cache/
+
+# macOS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE specific
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

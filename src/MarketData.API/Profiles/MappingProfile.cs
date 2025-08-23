@@ -15,11 +15,7 @@ public class MappingProfile : Profile
 
         CreateMap<HistoricalPrice, HistoricalPriceDto>();
 
-        CreateMap<MarketNews, MarketNewsDto>()
-            .ForMember(dest => dest.RelatedSymbols, opt => opt.MapFrom(src => 
-                string.IsNullOrEmpty(src.RelatedSymbols) 
-                    ? new List<string>() 
-                    : src.RelatedSymbols.Split(',').ToList()));
+        CreateMap<MarketNews, MarketNewsDto>();
 
         CreateMap<MarketIndex, MarketIndexDto>();
 
